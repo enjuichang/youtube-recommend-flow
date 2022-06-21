@@ -2,6 +2,7 @@ from get_video_content import getVideoContent
 from nlp_parsing import getGameTitle
 from search_video import searchVideo
 from get_game_type import getSteamGenre
+import re
 
 # Get YouTube Data API creds
 import os
@@ -10,6 +11,12 @@ import googleapiclient.discovery
 import googleapiclient.errors
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+
+def processUrl(video_url):
+    # Regex for YouTube url2id
+    # Source: https://stackoverflow.com/questions/3452546/how-do-i-get-the-youtube-video-id-from-a-url
+    video_id = re.findall(r"^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*",video_url)
+    return video_id[0][1]
 
 def main(video_url):
     scopes = ["https://www.googleapis.com/auth/youtube.readonly","https://www.googleapis.com/auth/youtube.force-ssl"]
@@ -43,7 +50,8 @@ def main(video_url):
     youtube = googleapiclient.discovery.build(
         api_service_name, api_version, credentials=creds)
 
-    title, description = getVideoContent(video_url, youtube)
+    video_id = processUrl(video_url)
+    title, description = getVideoContent(video_id, youtube)
     game_title = getGameTitle(title)
     print(game_title)
     game_cats = getSteamGenre(game_title)
@@ -52,6 +60,6 @@ def main(video_url):
     return titles[0], game_cats, urls[0]
 
 if __name__ == "__main__":
-    video_url = input("Video ID: ")
+    video_url = input("Video URL: ")
     result = main(video_url)
     print(result)
